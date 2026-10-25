@@ -1,0 +1,344 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>CT46.A8.Zoltar — context file</title>
+<style>body{max-width:900px;margin:32px auto;padding:0 16px;font:15px/1.55 Georgia,serif;background:#0b0f11;color:#e8dcc4}
+h1,h2{color:#d6aa5c} a{color:#e7c07a} code{background:#1a2226;padding:1px 4px;border-radius:3px;font-size:13px}
+hr{border:0;border-top:1px solid #33403f;margin:28px 0}
+table{border-collapse:collapse;width:100%} td,th{border:1px solid #33403f;padding:6px 8px;vertical-align:top} th{background:#162022}</style>
+</head><body><h1>CT46.A8.Zoltar — context file</h1>
+<p>Prototype of a coin-op <strong>Zoltar</strong> fortune teller. Browser, WebGL, three.js (bundled locally). Works from file://.
+Harness: Claude harness v4. Built 2026-10-16. <strong>Run: double-click <code>index.html</code></strong> (A8 renames the page from <code>CT46.Ax.Zoltar.html</code> to <code>index.html</code>), or <code>Zoltar_kiosk.bat</code> so the music plays without a first click.</p>
+<p><strong>Lineage:</strong> A8 = <strong>A7</strong> + the user's A8 request:
+<em>"As before, but with the ability to create a video with audio from the beginning through clicking to get a fortune, which holds
+for a while then returns. To make a video of Zoltar for others to see without running it."</em></p>
+<h2>A8: making a movie</h2>
+<ul>
+<li><strong>● Make movie</strong> (small button, bottom right; or key <strong>M</strong>). One press records the whole show and then downloads it:</li>
+<li>the intro from the very beginning (title fades in and rises, the cards are dealt into the spiral);</li>
+<li>the button <em>Click to know your future!</em> appears and beckons for 2.5 s;</li>
+<li>it is "clicked" automatically: the music swells, the card is chosen and flies to centre stage, and the fortune window opens;</li>
+<li>the fortune <strong>holds for 12 s</strong> (<code>index.html?hold=20</code> for 20 s, from 3 to 120);</li>
+<li>the fortune closes, the card returns to the spiral, the button fades back in, and 3 s more.
+  The file is <code>CT46.A8.Zoltar_movie_YYYYMMDD-HHMMSS.mp4</code> (about 35 s), in your Downloads folder. Press the button (or M) again to stop early; what was recorded so far is saved.</li>
+<li><strong>V</strong> = free recording: start and stop it yourself, and record whatever you do (several fortunes, for example).</li>
+<li><strong>What is in the movie:</strong> the WebGL picture plus the two HTML parts of the show, the button and the fortune window, painted into the
+  frame with their live fades and the window's opening zoom (Metamorphous lettering, justified text, gold drop capital, double gold frame).
+  The help line, version label, sound hint, the movie button and the red REC badge are <strong>not</strong> in the movie.</li>
+<li><strong>Sound:</strong> the music engine's output is tapped (<code>engine.out</code> → MediaStreamDestination), so the movie has the music, swell and gong
+  exactly as heard. The Make-movie click itself unlocks the browser's audio, so the soundtrack starts with the picture.</li>
+<li><strong>Speed and resolution (harness v4, no batch step):</strong> it is recorded live as it plays, so the movie runs at real speed. It is the size of the
+  page in device pixels: press <strong>F</strong> for full screen first for a 1920×1080 (or larger) movie. 60 fps, about 0.12 bit per pixel per frame
+  (≈ 15 Mb/s at 1080p). Chrome / Edge produce <strong>MP4 (H.264 + AAC)</strong>; other browsers WebM (VP9 + Opus).</li>
+<li>Code: <code>CT46.A8.Zoltar_movie.js</code> (new). In <code>index.html</code> the frame loop calls <code>window.__zoltarAfterFrame()</code> right after drawing, and the script tag was added.</li>
+</ul>
+<h2>Verified (A8)</h2>
+<p>Headless Chromium (software WebGL) from file://, <code>?hold=4</code>: one press of Make movie ran the whole sequence unattended (intro → button → card →
+fortune → hold → return → stop) and produced a video with a VP9 picture track at the page size and an Opus music track (mean −16 dB, peak −2 dB).
+Frames checked: the spiral with the card flying, and the fortune window drawn into the movie the same as on screen. Software GL there ran at only
+≈ 6 fps, so its test movie was choppy; on your PC's graphics card it records at the screen's frame rate. MP4/H.264 could not be checked in the
+build container (its Chromium has no H.264 encoder); Chrome and Edge on Windows have one.</p>
+<hr />
+<h1>CT46.A7 context (still valid unless changed above)</h1>
+<h1>CT46.A7.Zoltar — context file</h1>
+<p>Prototype of a coin-op <strong>Zoltar</strong> fortune teller. Browser, WebGL, three.js (bundled locally). Works from file://.
+Harness: Claude harness v2 (2026-09-27). Built 2026-10-04.</p>
+<p><strong>Lineage:</strong> A7 = <strong>A6</strong> + the user's A7 request:
+<em>"There should be about 50 fortunes written using a generative AI of some sort. Each fortune should be about 75-150 words.
+The fortune should be dramatic and use the language of the occult and the esoteric knowledge. Also Hermetic wisdom from time
+to time. The fortune should indicate such things as why the signs of the universe compel a certain destiny, and how the actions
+of the fortune seeker in the past has ordained success or failure. These fortunes should also be put into a file for easy
+inspection. When the user clicks on the button, the animation and audio should proceed as it is currently designed, then when
+the selected card comes to a halt, a window should open up with the text of the chosen fortune. When the user clicks on the
+window the fortune disappears and we return to the state where the user is invited to click on the button."</em>
+A2 (voice + revealed text) remains rejected. Everything below the line is A6's context, still valid except where noted.</p>
+<h2>A7 behaviour</h2>
+<ul>
+<li>Unchanged from A6: always-on music, button position (27.5%), button fade, intro, card spiral, selection flight, music swell + gong.</li>
+<li>When the selected card <strong>comes to a halt</strong> in centre stage, after <code>fortune.openDelay</code> (0.6 s, past the arrival flare) a
+  <strong>fortune window</strong> fades in (1 s, slight scale-up) over the presented card: dark burgundy velvet panel, double gold frame with
+  diamond corner studs, Metamorphous lettering (bundled font), "Fortune XXIII" numeral, title, gold rule, justified text with a
+  gold drop capital, and the hint <em>"Click anywhere to return the card to Zoltar"</em>. Size: min(38em, 92vw) wide, max 80vh tall,
+  font clamp(14px, .62vw + .82vh, 21px); scrolls if ever needed (none of the 50 overflow at 1920×1080, 1280×720, 1024×600 or 700×1000).</li>
+<li>The fortune is drawn from a <strong>shuffle bag</strong>: all 50 are shown once (random order) before any repeats, and a new round never
+  starts with the fortune that ended the last one. (In memory only — reloading the page starts a fresh bag.)</li>
+<li><strong>Closing:</strong> a click / tap anywhere (the window included) or <strong>Space / Enter</strong> closes the fortune (fades out 0.7 s); the card
+  flies back into the spiral (0.9 s) and the button fades back in — the inviting state. Uses <code>click</code>, not <code>pointerdown</code>, so a touch
+  scroll of the window doesn't close it.</li>
+<li><strong>Auto-return:</strong> if nobody closes it, the fortune closes by itself after <strong><code>fortune.autoCloseSeconds</code> = 90 s</strong> (counted from when
+  the window opens; 0 = never). This replaces A6's 30 s <code>select.presentSeconds</code> (removed), because reading takes time.</li>
+<li><strong>Guards:</strong> the button ignores clicks while hidden; clicks and keys during the selection flight, during the open delay, and while
+  the card returns are ignored; clicks/keys in the first <code>fortune.minShowSeconds</code> (0.6 s) after opening are ignored (no accidental
+  instant close); held keys (<code>e.repeat</code>) never fire; the button's click doesn't propagate to the close handler. <strong>R</strong> (replay) hides
+  the window instantly.</li>
+</ul>
+<h2>The fortunes</h2>
+<ul>
+<li>50 original fortunes written by Claude (the generative AI) for A7: second person, Zoltar's voice, 102–126 words each
+  (average 113). <strong>20 favourable, 15 warning, 15 mixed / conditional</strong>; Hermetic wisdom (Emerald Tablet, Kybalion principles,
+  Thoth / Hermes Trismegistus, Poimandres) in 16 of them; the rest draw on the Tarot Arcana, planets and houses, the sephiroth,
+  the elements and elementals, and the alchemical stages. Each says why the signs compel a destiny and how the seeker's own past
+  deeds ordained it. Arcade-safe: no death or illness predictions.</li>
+<li><strong><code>CT46.A7.Zoltar_fortunes.json</code></strong> is the master list: <code>[{id, title, outcome: "favourable"|"warning"|"mixed", text}]</code>.
+  The page uses it when served over http(s); from disk (file://) fetch is blocked, so the identical <strong>embedded copy</strong> inside
+  <code>CT46.A7.Zoltar.html</code> (between <code>/*FORTUNES_BEGIN*/ … /*FORTUNES_END*/</code>) is used — the same pattern as config.json.</li>
+<li><strong><code>CT46.A7.Zoltar_fortunes.md</code></strong> (+ <code>.md.html</code>) lists them for easy inspection: table of contents, then each with number,
+  title, outcome, word count, Hermetic flag and text.</li>
+<li>To edit a fortune: change the JSON, then run <code>python3 tools/build_docs.py</code> — it validates (ids 1..N, outcome, 75–150 words),
+  rewrites the fortunes .md, refreshes the embedded copy in the page and re-renders every .md → .md.html shadow.</li>
+</ul>
+<h2>Files new / changed in A7</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CT46.A7.Zoltar.html</code></td>
+<td>Fortune window (CSS + markup), embedded fortunes, shuffle bag, open on halt, close/auto-close logic, guards.</td>
+</tr>
+<tr>
+<td><code>CT46.A7.Zoltar_fortunes.json</code></td>
+<td><strong>New.</strong> The 50 fortunes (master copy).</td>
+</tr>
+<tr>
+<td><code>CT46.A7.Zoltar_fortunes.md</code> / <code>.md.html</code></td>
+<td><strong>New.</strong> Readable list of the fortunes.</td>
+</tr>
+<tr>
+<td><code>config.json</code></td>
+<td><code>version</code>; new <code>fortune {file, openDelay, minShowSeconds, autoCloseSeconds}</code>; <code>select.presentSeconds</code> removed.</td>
+</tr>
+<tr>
+<td><code>tools/build_docs.py</code></td>
+<td><strong>New.</strong> Validates fortunes, writes the fortunes .md, embeds fortunes into the page, renders .md → .md.html.</td>
+</tr>
+<tr>
+<td><code>tools/test_a7.js</code>, <code>tools/test_a7_all_fortunes.js</code></td>
+<td><strong>New.</strong> Playwright checks used for A7 (paths are for the build machine).</td>
+</tr>
+<tr>
+<td><code>Zoltar_kiosk.bat</code></td>
+<td>Opens CT46.A7.Zoltar.html.</td>
+</tr>
+</tbody>
+</table>
+<h2>Config keys (config.json → <code>fortune</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>file</code></td>
+<td><code>CT46.A7.Zoltar_fortunes.json</code></td>
+<td>Fortune list read over http(s); from file:// the embedded copy is used.</td>
+</tr>
+<tr>
+<td><code>openDelay</code></td>
+<td>0.6</td>
+<td>Seconds after the card halts before the window opens.</td>
+</tr>
+<tr>
+<td><code>minShowSeconds</code></td>
+<td>0.6</td>
+<td>Clicks / keys this soon after opening are ignored.</td>
+</tr>
+<tr>
+<td><code>autoCloseSeconds</code></td>
+<td>90</td>
+<td>Auto-return to the inviting state (0 = never).</td>
+</tr>
+</tbody>
+</table>
+<h2>Verified (A7)</h2>
+<p>Headless Chromium (SwiftShader WebGL) from file:// at 1600×900 (DSF 1 and 1.5), 1280×720 @1.5, 700×1000: no console errors;
+button → card flies (stray click / Enter / button clicks mid-flight ignored) → card halts → window opens ≈0.7–1.2 s later
+(frame-rate dependent under software GL) → click on the window closes it, card returns, button fades back to opacity 1 →
+Enter selects again, a different fortune appears, Space closes it. Shuffle bag: 48 remaining unique, next round all 50 unique and
+starts with a different fortune. All 50 fit without scrolling at 1920×1080, 1280×720, 1024×600, 700×1000. Auto-close verified with a
+2 s setting.</p>
+<h2>Ideas for A8</h2>
+<ul>
+<li>Show the fortune on the card's face (flip the card) instead of / as well as the window; per-outcome music sting.</li>
+<li>Remember the shuffle bag across reloads (localStorage) for a kiosk that is restarted often; printed ticket.</li>
+</ul>
+<hr />
+<h2>A6 context</h2>
+<p><strong>A6 lineage:</strong> A6 = <strong>A5</strong> + the user's A6 request: <em>"When the user clicks on the button, the button can fade away."</em>
+(A7 note: the 30 s <code>select.presentSeconds</code> auto-return below is replaced in A7 by <code>fortune.autoCloseSeconds</code> = 90 s.)</p>
+<h3>A6 behaviour</h3>
+<ul>
+<li>Click <strong>Click to know your future!</strong> (or Space / Enter) → the button <strong>fades away completely</strong> (1.4 s, CSS class <code>gone</code>,
+  no longer clickable) while the music swells and the card is selected and presented (unchanged from A3–A5).</li>
+<li>While the card is presented the button stays hidden. The card goes back into the spiral when the visitor <strong>clicks / taps
+  anywhere</strong> or presses <strong>Space / Enter</strong>, or automatically after <strong><code>select.presentSeconds</code> = 30 s</strong> (set 0 to never auto-return).
+  When the card has landed back in the spiral, the button <strong>fades back in</strong> for the next visitor.</li>
+<li>A3–A5's "click again = swap to a new card" path was removed (the button is no longer there to click).</li>
+<li>The selected-card shaders are pre-compiled at start (<code>renderer.compile(heroScene, heroCam)</code>) so the first click doesn't
+  stall a frame (the stall delayed the fade in testing).</li>
+<li><code>config.json</code>: <code>select.presentSeconds</code> added, <code>select.buttonCooldown</code> removed. <code>Zoltar_kiosk.bat</code> now opens CT46.A6.Zoltar.html.</li>
+</ul>
+<h3>Verified (A6)</h3>
+<p>Headless Chromium from file://: button fades to opacity 0 after click and ignores clicks/keys while hidden; card presented;
+click elsewhere and Enter both return the card; button fades back in; Enter selects again. No console errors.</p>
+<hr />
+<h2>A5 context</h2>
+<p><strong>A5 lineage:</strong> A5 = <strong>A4</strong> + the user's A5 requests:
+1. <em>"Does the audio start automatically, does one need to click on the browser to enable audio?"</em> — answered (below); no code change needed.
+2. <strong>Button moved higher</strong>: from 61.5% to <strong>27.5%</strong> of screen height (just under the title). Because the button now sits above
+   centre stage, the selected card is presented lower and slightly smaller: centre <strong>47%</strong> of height (was 39%), card height
+   <strong>30%</strong> of screen (was 33%) → card spans ≈ 32–62%, clear of the button and above the spiral.
+   (<code>config.json</code> → <code>select.buttonY 0.275, centerY 0.47, heightFraction 0.30</code>; CSS <code>#future { top: 27.5% }</code>.)
+A2 (voice + text) remains rejected. Everything below the line is A4's context, still valid (kiosk launcher renamed to open CT46.A5.Zoltar.html).</p>
+<h2>Does the audio start automatically? (answer given to the user)</h2>
+<ul>
+<li><strong>Via <code>Zoltar_kiosk.bat</code>: yes</strong> — Chrome/Edge are launched with <code>--autoplay-policy=no-user-gesture-required</code> in their own
+  profile, so the music starts by itself at page load with no click.</li>
+<li><strong>Double-clicking <code>CT46.A5.Zoltar.html</code>: usually no</strong> — Chrome, Edge and Firefox block sound on a fresh page until the
+  visitor clicks or presses a key (browser policy; a page cannot override it). The music is already running silently-held; the
+  first click or key press anywhere releases it, and a hint at the bottom says so. After that it never stops.</li>
+<li>Chrome may later allow it automatically for a page it has seen played a lot (its "media engagement" score); Firefox can be set
+  to allow audio for a site via the address-bar permissions icon.</li>
+</ul>
+<hr />
+<h2>A4 context</h2>
+<p><strong>A4 lineage:</strong> A4 = <strong>A3</strong> + two changes requested by the user:
+1. <strong>The eerie music plays all the time</strong> — from page load, never stopped (A3's M-mute key removed).
+2. <strong>The button is smaller</strong> (font clamp(12px, 1.35vw, 19px), slimmer padding/border/glow — roughly 60% of A3's size).
+A2 (spoken voice + revealed text) remains rejected — do not bring it back. Everything below the line is A3's context, still valid.</p>
+<h2>Always-on music (A4)</h2>
+<ul>
+<li><code>music.ensure()</code> is called at page load: the AudioContext is created and the engine started immediately (3 s fade-in, <code>CFG.music.fadeIn</code>).</li>
+<li>Browsers decide whether sound may start without a click. Chrome/Edge normally hold it; then the audio clock waits,
+  a small pulsing hint appears bottom-centre (<em>"This browser holds the music until you click or press a key — or start Zoltar with Zoltar_kiosk.bat"</em>),
+  and the first click / key / touch anywhere (capture-phase listeners) resumes it. A 1 s watchdog and <code>visibilitychange</code> resume it if it is ever suspended.</li>
+<li><strong><code>Zoltar_kiosk.bat</code></strong> (Windows): finds Chrome (or Edge) and opens the page as an app window with
+  <code>--autoplay-policy=no-user-gesture-required</code> and its own profile folder (<code>%LOCALAPPDATA%\ZoltarKiosk</code>, so the flag applies even
+  if the browser is already running) → music from the very first moment. Add <code>--kiosk</code> for a full-screen cabinet.</li>
+<li>Test note: Playwright adds <code>--autoplay-policy=no-user-gesture-required</code> by default and headless Chromium does not enforce autoplay,
+  so the blocked path was verified by emulating a gesture-gated AudioContext (hint shown, key press → running, hint hidden).</li>
+</ul>
+<h2>Files added/changed in A4</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CT46.A4.Zoltar.html</code></td>
+<td>Music starts at load; sound hint; smaller button; M key removed.</td>
+</tr>
+<tr>
+<td><code>Zoltar_kiosk.bat</code></td>
+<td>New Windows launcher with autoplay allowed.</td>
+</tr>
+<tr>
+<td><code>config.json</code></td>
+<td><code>version</code>, <code>music.fadeIn</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>A3 context (unchanged parts)</h2>
+<p><strong>A3 lineage:</strong> A3 = <strong>A1</strong> (title intro + endless card spiral, kept exactly) <strong>+ occult music + "Click to know your future!" card selection.</strong>
+A2 (Zoltar's spoken voice + revealed text) was rejected by the user and is <strong>not</strong> included — do not bring the voice/text back.
+A1's .md (in <code>CT46.A1.Zoltar</code>) documents the title/card-spiral rendering in detail; all of it still applies.</p>
+<h2>How to run</h2>
+<ul>
+<li>Double-click <code>CT46.A3.Zoltar.html</code> (Chrome / Edge / Firefox). No server, no internet.</li>
+<li>Music: see "Always-on music (A4)" above (starts at load; first interaction only if the browser holds it).</li>
+<li><strong>Click to know your future!</strong> (or Space / Enter) → music swells, a card is selected from the spiral.</li>
+<li><strong>R</strong> replay intro · <strong>F</strong> fullscreen · <strong>H</strong> hide labels.</li>
+<li><code>config.json</code> is read only when served over http; from disk the identical defaults inside the HTML are used.</li>
+</ul>
+<h2>What A3 does (the user's request)</h2>
+<p>"Instead of Zoltar speaking, there should be eerie, occult music, and a sound increases when the user hits a button that says
+'Click to know your future!'; when the user clicks on it, a card is selected from the spiral of fortune cards."</p>
+<p>Sequence: intro (A1) → cards dealt → button fades in (pulsing gold, centred at 61.5% of screen height, just above the spiral) →
+click → over <code>swellTime</code> (3.2 s) the music crescendos, the spiral whirls up to 4.5× speed and the lamp/sparkles flare,
+while the card nearest the viewer lifts out of the spiral, arcs toward the viewer, spins twice about its long axis and
+lands face-on in centre stage (39% height, card height 33% of screen) exactly as the gong strikes; it then hovers with a
+rotating golden halo. Clicking again sends that card back to its (moving) slot in the spiral (0.9 s) and selects a new one.
+The card shows its <strong>back</strong> — there is no front/fortune art yet.</p>
+<h2>Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CT46.A3.Zoltar.html</code></td>
+<td>Whole program (inline JS) + button CSS.</td>
+</tr>
+<tr>
+<td><code>config.json</code></td>
+<td>Tunables. New: <code>music {volume, swellTime}</code>, <code>select {buttonText, buttonY, centerY, heightFraction, spins, returnTime, buttonCooldown, spiralBoost}</code>.</td>
+</tr>
+<tr>
+<td><code>audio/zoltar_music.js</code></td>
+<td><strong>ZoltarMusic</strong> — the music engine, synthesised live with Web Audio (no audio files).</td>
+</tr>
+<tr>
+<td><code>audio/zoltar_music_preview.mp3</code></td>
+<td>45 s offline render of the engine (swell + gong at 15 s) so the music can be auditioned outside the app.</td>
+</tr>
+<tr>
+<td><code>fonts/Metamorphous-Regular.ttf</code> + OFL</td>
+<td>Button font; embedded via <code>assets/zoltar_fonts.js</code> + FontFace API.</td>
+</tr>
+<tr>
+<td><code>assets/*</code>, <code>lib/three.r186.min.js</code></td>
+<td>As A1 (art embedded as data URIs; three.js r186 IIFE bundle).</td>
+</tr>
+<tr>
+<td><code>tools/embed_assets.py</code></td>
+<td>Rebuilds <code>assets/zoltar_assets.js</code> (art) and <code>assets/zoltar_fonts.js</code> (font).</td>
+</tr>
+</tbody>
+</table>
+<h2>Music engine (audio/zoltar_music.js)</h2>
+<ul>
+<li>Key: <strong>D Hungarian minor</strong> (D E F G♯ A B♭ C♯) — Carpathian colour.</li>
+<li>Layers: low detuned-saw <strong>drone</strong> on D with a breathing low-pass (LFO 0.045 Hz) and slow tremor; formant-filtered
+  <strong>"ooh" choir</strong> chords (3 detuned saws → band-passes 420/820/2600 Hz, vibrato) changing every 8 s through
+  Dm–B♭–Gm–A–(D F G♯ D)–B♭–G♯dim–A; sparse <strong>FM bells</strong> (ratio 3.51) with a 0.62 s echo; band-passed <strong>wind</strong> noise; an
+  occasional distant <strong>gong</strong> (inharmonic FM partials + metallic noise).</li>
+<li>Generated dark stereo convolution <strong>reverb</strong> (5.5 s); compressor → hard limiter (−4 dB, 20:1) → output, so swells never clip.</li>
+<li><code>swell(at)</code>: intensity bus ×2.4, drone filter opens 260→1500 Hz, rising band-passed noise sweep 180→5200 Hz,
+  tremolo-ed choir cluster (D F G♯ A, high), then at the peak a big gong (41 Hz), two bells and a sub "boom"; settles over ~3–6 s.
+  Measured: ambient ≈ −21 dBFS RMS, swell ≈ −14 dBFS, peak 0.76 (no clipping).</li>
+<li>Deterministic random (mulberry32, seed 7). Live mode self-schedules every 250 ms with 1 s look-ahead; offline mode:
+  <code>build(); scheduleUntil(secs); swell(t); startRendering()</code> (how the preview mp3 and the automated check are made).</li>
+</ul>
+<h2>Card selection (rendering)</h2>
+<ul>
+<li>Selected card is hidden in the spiral (<code>c.selected</code>) and redrawn in a full-screen <strong>hero scene</strong>: PerspectiveCamera
+  (fov 30) placed at <code>(H/2)/tan(15°)</code> so 1 world unit = 1 CSS pixel at z = 0 (origin centre, +y up).</li>
+<li>Start pose = the spiral card's projected screen position, projected pixel height, and its orientation relative to the
+  card camera (<code>cardCam.quaternion⁻¹ · card.quaternion</code>) → seamless hand-off out of the scissored bottom-third viewport.</li>
+<li>Flight: quadratic Bézier (lift toward the viewer, z up to 0.35·H), slerp to face-on × 2 spins about Y, size lerp.</li>
+<li>Halo: additive shader quad behind the card (soft ellipse + slowly turning rays), flares on arrival.</li>
+<li>Pick rule: visible card on the table part of the spiral (not freshly dealt, not airborne) with the largest z (nearest viewer).</li>
+<li>Spiral speed uses an accumulated <code>phase</code> so it can surge (<code>spiralBoost</code> × smooth rise to the peak, then exp decay 1.6 s).</li>
+</ul>
+<h2>Verified</h2>
+<p>Headless Chromium from <code>file://</code> at 1600×900 and 700×1000: no console errors; button appears after the deal; click
+starts audio (AudioContext running) and selection; card lands centre-stage; second press returns it and selects another.
+Music rendered offline and measured (levels above). Listening quality needs the user's ear — preview mp3 included.</p>
+<h2>Ideas for A4</h2>
+<ul>
+<li>Card fronts: flip the presented card to reveal a fortune (fortunes in JSON; front art per card or a generated fortune panel).</li>
+<li>Coin-slot sound / credit counter; Zoltar figure; music variations per selection.</li>
+</ul></body></html>

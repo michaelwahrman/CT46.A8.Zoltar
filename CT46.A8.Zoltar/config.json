@@ -1,0 +1,52 @@
+{
+  "version": "CT46.A8.Zoltar",
+  "intro": {
+    "fadeIn": 1.2,
+    "hold": 1.2,
+    "move": 1.6,
+    "introSizeOfMinDim": 0.72
+  },
+  "title": {
+    "finalHeightFraction": 0.2,
+    "contentFraction": 0.86,
+    "shimmerPeriod": 6.0
+  },
+  "cards": {
+    "count": 64,
+    "regionHeightFraction": 0.3333,
+    "turns": 3,
+    "loopSeconds": 30,
+    "innerRadius": 0.1,
+    "tableFraction": 0.78,
+    "flightLift": 1.05,
+    "flightFlips": 2,
+    "tilt": 0.42,
+    "dealDelayAfterMoveStart": 0.8,
+    "dealStagger": 0.04,
+    "dealFlight": 0.9,
+    "aspect": 0.5604
+  },
+  "sparkles": {
+    "count": 260
+  },
+  "music": {
+    "volume": 0.5,
+    "swellTime": 3.2,
+    "fadeIn": 3
+  },
+  "select": {
+    "buttonText": "Click to know your future!",
+    "buttonY": 0.275,
+    "centerY": 0.47,
+    "heightFraction": 0.3,
+    "spins": 2,
+    "returnTime": 0.9,
+    "spiralBoost": 3.5
+  },
+  "fortune": {
+    "file": "CT46.A8.Zoltar_fortunes.json",
+    "openDelay": 0.6,
+    "minShowSeconds": 0.6,
+    "autoCloseSeconds": 90
+  }
+}

@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT46.A8.Zoltar</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #04080a; overflow: hidden; }
+  canvas { display: block; }
+  #ver {
+    position: fixed; right: 12px; bottom: 10px; z-index: 2;
+    font: 12px/1 Georgia, 'Times New Roman', serif; letter-spacing: .08em;
+    color: rgba(214, 170, 92, .55); user-select: none; pointer-events: none;
+  }
+  #help {
+    position: fixed; left: 12px; bottom: 10px; z-index: 2;
+    font: 11px/1.4 Georgia, serif; color: rgba(214, 170, 92, .35);
+    user-select: none; pointer-events: none;
+  }
+  #future {
+    position: fixed; left: 50%; top: 27.5%; transform: translate(-50%, -50%) scale(.96); z-index: 3;
+    font: clamp(12px, 1.35vw, 19px)/1.1 'Metamorphous', Georgia, serif; letter-spacing: .04em;
+    color: #f6dfa4; padding: .5em 1.25em .55em; cursor: pointer;
+    background: radial-gradient(ellipse at 50% 40%, rgba(70,44,14,.92), rgba(18,10,4,.94) 70%);
+    border: 1.5px solid #c9974a; border-radius: 999px;
+    box-shadow: 0 0 0 3px rgba(20,12,4,.9), 0 0 0 4px rgba(201,151,74,.55), 0 0 18px rgba(255,180,80,.35), inset 0 0 12px rgba(255,190,90,.18);
+    text-shadow: 0 0 10px rgba(255,190,90,.55), 0 1px 0 #3a2208;
+    opacity: 0; pointer-events: none; transition: opacity 1.2s ease, transform .25s ease, box-shadow .25s ease;
+    animation: beckon 2.8s ease-in-out infinite;
+  }
+  #future.shown { opacity: 1; pointer-events: auto; }
+  #future.shown:hover { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 0 0 3px rgba(20,12,4,.9), 0 0 0 4px rgba(240,190,100,.9), 0 0 30px rgba(255,190,90,.6), inset 0 0 16px rgba(255,200,110,.28); }
+  /* A6: once clicked the button fades away completely, and fades back when the card returns */
+  #future.shown.gone { opacity: 0; pointer-events: none; animation: none; transition: opacity 1.4s ease; }
+  @keyframes beckon { 0%,100% { filter: brightness(.92); } 50% { filter: brightness(1.18); } }
+  #sound {
+    position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
+    font: 12px/1 Georgia, serif; letter-spacing: .06em; color: rgba(232,190,110,.7);
+    pointer-events: none; transition: opacity .8s ease; animation: beckon 2.8s ease-in-out infinite;
+  }
+  #sound.off { opacity: 0; }
+  /* A7: the fortune window - dark velvet panel, double gold frame, Metamorphous lettering */
+  #fortune {
+    position: fixed; left: 50%; top: 50%; z-index: 5; box-sizing: border-box;
+    width: min(38em, 92vw); max-height: 80vh; display: flex; padding: .5em; cursor: pointer;
+    font-size: clamp(14px, calc(.62vw + .82vh), 21px);
+    color: #ecdcb8; user-select: none; -webkit-user-select: none;
+    background: radial-gradient(ellipse at 50% 28%, rgba(78,24,32,.97), rgba(30,9,14,.97) 62%, rgba(13,4,7,.98));
+    border: 2px solid #c9974a; border-radius: 12px;
+    box-shadow: 0 0 0 4px rgba(18,8,4,.96), 0 0 0 5.5px rgba(201,151,74,.6), 0 0 44px rgba(255,170,70,.33),
+                0 12px 70px rgba(0,0,0,.85), inset 0 0 40px rgba(0,0,0,.65);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translate(-50%, -50%) scale(.93);
+    transition: opacity .7s ease, transform .7s ease, visibility 0s linear .7s;
+  }
+  #fortune.open {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, -50%) scale(1);
+    transition: opacity 1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1), visibility 0s;
+  }
+  #fortune .fx-c { position: absolute; width: 13px; height: 13px; background: #23090f; border: 1.5px solid #e0b264;
+                   transform: rotate(45deg); box-shadow: 0 0 8px rgba(255,190,90,.5); }
+  #fortune .fx-c.tl { left: -9px; top: -9px; } #fortune .fx-c.tr { right: -9px; top: -9px; }
+  #fortune .fx-c.bl { left: -9px; bottom: -9px; } #fortune .fx-c.br { right: -9px; bottom: -9px; }
+  #fortune .fx-in {
+    flex: 1; min-height: 0; overflow-y: auto; border: 1px solid rgba(201,151,74,.5); border-radius: 8px;
+    padding: 1em 1.7em .9em; scrollbar-width: thin; scrollbar-color: #8a6430 transparent;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, rgba(0,0,0,.02) 2px 4px);
+  }
+  #fortune .fx-num { text-align: center; font: .8em/1 'Metamorphous', Georgia, serif; letter-spacing: .3em; color: rgba(214,170,92,.75); }
+  #fortune h2 {
+    margin: .35em 0 .2em; text-align: center; font: 1.5em/1.15 'Metamorphous', Georgia, serif; letter-spacing: .03em;
+    color: #f6dc98; text-shadow: 0 0 14px rgba(255,190,90,.5), 0 1px 0 #3a1608;
+  }
+  #fortune .fx-rule { height: 10px; margin: .3em auto .8em; width: 62%;
+    background: radial-gradient(circle at 50% 50%, #e0b264 0 3px, transparent 3.5px),
+                linear-gradient(90deg, transparent, #c9974a 20%, #c9974a 80%, transparent) 50% 50% / 100% 1px no-repeat; }
+  #fortune .fx-text { font: 1em/1.62 'Metamorphous', Georgia, serif; text-align: justify; hyphens: auto; margin: 0; }
+  #fortune .fx-text::first-letter { float: left; font-size: 3.1em; line-height: .9; padding: .06em .1em 0 0; color: #f0c870;
+                                   text-shadow: 0 0 12px rgba(255,180,80,.55); }
+  #fortune .fx-foot { margin-top: .9em; text-align: center; font: italic .78em/1.2 Georgia, serif; letter-spacing: .06em;
+                      color: rgba(214,170,92,.6); }
+  #err {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    color: #d6aa5c; font: 16px Georgia, serif; text-align: center; padding: 24px;
+  }
+</style>
+</head>
+<body>
+<div id="ver">CT46.A8.Zoltar</div>
+<div id="help">Space / Enter know your future (again to close the fortune) &middot; R replay &middot; F fullscreen &middot; H hide labels</div>
+<div id="sound" class="off">&#9835; This browser holds the music until you click or press a key &mdash; or start Zoltar with Zoltar_kiosk.bat</div>
+<button id="future" type="button">Click to know your future!</button>
+<div id="fortune" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="fx-title">
+  <span class="fx-c tl"></span><span class="fx-c tr"></span><span class="fx-c bl"></span><span class="fx-c br"></span>
+  <div class="fx-in">
+    <div class="fx-num" id="fx-num"></div>
+    <h2 id="fx-title"></h2>
+    <div class="fx-rule"></div>
+    <p class="fx-text" id="fx-text"></p>
+    <div class="fx-foot">Click anywhere to return the card to Zoltar</div>
+  </div>
+</div>
+<div id="err"></div>
+
+<!-- three.js r186, bundled locally (no network needed) -->
+<script src="lib/three.r186.min.js"></script>
+<!-- Title + card art embedded as data URIs so file:// works without a web server -->
+<script src="assets/zoltar_assets.js"></script>
+<!-- Button font (Metamorphous, OFL) embedded for file://, and the live-synthesised occult music engine -->
+<script src="assets/zoltar_fonts.js"></script>
+<script src="audio/zoltar_music.js"></script>
+
+<script>
+(async function () {
+'use strict';
+const THREE = window.THREE;
+const errBox = document.getElementById('err');
+function fail(msg) { errBox.style.display = 'flex'; errBox.textContent = msg; }
+if (!THREE) return fail('three.js failed to load (lib/three.r186.min.js missing).');
+if (!window.ZOLTAR_ASSETS) return fail('Art failed to load (assets/zoltar_assets.js missing).');
+
+// ---------------------------------------------------------------- config
+// Defaults mirror config.json. When the page is served over http(s) the JSON
+// file is read and overrides these; opened from disk (file://) browsers block
+// fetch, so the built-in defaults are used.
+let CFG = {
+  version: 'CT46.A8.Zoltar',
+  intro: { fadeIn: 1.2, hold: 1.2, move: 1.6, introSizeOfMinDim: 0.72 },
+  title: { finalHeightFraction: 0.20, contentFraction: 0.86, shimmerPeriod: 6.0 },
+  cards: { count: 64, regionHeightFraction: 1 / 3, turns: 3, loopSeconds: 30, innerRadius: 0.10,
+           tableFraction: 0.78, flightLift: 1.05, flightFlips: 2, tilt: 0.42,
+           dealDelayAfterMoveStart: 0.8, dealStagger: 0.04, dealFlight: 0.9, aspect: 816 / 1456 },
+  sparkles: { count: 260 },
+  music: { volume: 0.5, swellTime: 3.2, fadeIn: 3 },
+  select: { buttonText: 'Click to know your future!', buttonY: 0.275, centerY: 0.47, heightFraction: 0.30,
+            spins: 2, returnTime: 0.9, spiralBoost: 3.5 },
+  // A7: the fortune window opens openDelay s after the card halts; closes on click / Space / Enter
+  // (ignored for the first minShowSeconds) or by itself after autoCloseSeconds (0 = never).
+  fortune: { file: 'CT46.A8.Zoltar_fortunes.json', openDelay: 0.6, minShowSeconds: 0.6, autoCloseSeconds: 90 }
+};
+function merge(a, b) {
+  for (const k in b) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) a[k] = merge(a[k] || {}, b[k]);
+    else a[k] = b[k];
+  }
+  return a;
+}
+if (location.protocol.startsWith('http')) {
+  try { const r = await fetch('config.json', { cache: 'no-store' }); if (r.ok) CFG = merge(CFG, await r.json()); }
+  catch (e) { /* keep defaults */ }
+}
+// A7: the fortunes. CT46.A8.Zoltar_fortunes.json is the master copy; the identical list below is embedded so the
+// page also works from disk (file://), where fetch() is blocked. tools/build_docs.py refreshes the embedded copy.
+const FORTUNES_EMBEDDED = /*FORTUNES_BEGIN*/[
+ {
+  "id": 1,
+  "title": "The Lantern of the Hermit",
+  "outcome": "favourable",
+  "text": "Behold! The ninth card of the Major Arcana burns in my glass, and the Hermit lifts his lantern above a road you once walked alone. Long ago you chose patience when others chose noise; you kept a promise that no one would have known you broke. Such quiet deeds are not forgotten. They were written in the ledger of Saturn, the old reaper who rewards those who endure. Now Jupiter crosses your ninth house, the house of far journeys and higher learning, and the two great planets clasp hands over your name. A door you thought sealed will open from the other side. Walk through it without looking back, for the light you carried in the dark years has become the light that leads you home."
+ },
+ {
+  "id": 2,
+  "title": "The Iron Pendulum",
+  "outcome": "warning",
+  "text": "Hear the Fourth Principle of Hermes Trismegistus: everything flows, out and in; the pendulum swing manifests in all things. You have ridden the high arc of that swing, seeker, and from its height you mocked those who stood below. I have watched Mars burn red in your house of pride, and I have seen the Wheel of Fortune turn upon its iron axle. What rises on borrowed praise must descend by the same measure. Your old boasts were seeds; the season of their harvest approaches, and it is bitter grain. Yet the wise neutralise the backward swing by refusing to be carried by it. Make amends now, before the wheel completes its turn, and the fall may be a stumble rather than a ruin."
+ },
+ {
+  "id": 3,
+  "title": "The Crowned Serpent",
+  "outcome": "mixed",
+  "text": "Coiled about the Tree of Life, the serpent climbs from Malkuth toward the crown, and tonight it pauses at Tiphareth, the golden heart of the ten sephiroth. That is where you stand: halfway between what you were and what you might become. In years gone by you gave generously but kept your truest gift hidden, afraid of its brightness. The stars do not reward a lamp under a bushel. Venus favours you now, and the moon waxes in your fifth house of creation, but their blessing is a key, not a door. If you bring your hidden talent into the open before the next new moon, the serpent will rise to the crown. If you hide it again, it will sleep another seven years."
+ },
+ {
+  "id": 4,
+  "title": "Nigredo",
+  "outcome": "warning",
+  "text": "The alchemists called it nigredo, the blackening: the stage in which the base matter rots in the sealed vessel before any gold can be born. Your vessel is sealed. Saturn, lord of lead, sits upon your Ascendant, and the Tower falls face up in my deck, lightning splitting its crown. You built upon foundations you knew were cracked; you told yourself small lies until they bore the weight of a house. That house must come down. Separate the subtle from the gross, says the Emerald Tablet, gently and with great skill. Do not prop the walls with more falsehoods, for each one adds a storey to the collapse. Let the old work blacken and break. Only from such ashes does the white stone of albedo emerge."
+ },
+ {
+  "id": 5,
+  "title": "As Above, So Below",
+  "outcome": "favourable",
+  "text": "Engraved upon the Emerald Tablet of Hermes is the oldest secret of my craft: that which is above is as that which is below, to accomplish the miracles of the one thing. Look up tonight and you will see Jupiter and Venus in close embrace, the Greater and Lesser Fortunes joined in the house of your desires. Now look within. Have you not lately joined your own heart and hands, doing at last the work you always said you loved? The heavens merely mirror the union you made below. Because you chose your true labour over easy comfort, the cosmos must now answer in kind. Expect recognition from an unexpected quarter, and accept it without false modesty."
+ },
+ {
+  "id": 6,
+  "title": "The Hanged Man's Patience",
+  "outcome": "mixed",
+  "text": "Upside down from the living tree hangs the twelfth trump of the Tarot, serene, a halo about his head. He has surrendered, and in surrender he sees what others cannot. Your stars mimic his posture: Mercury retrograde in your house of work, Neptune veiling your path in mist. Plans you rushed in former seasons now stall, and that is no accident; haste was the coin you paid with, and haste buys only delay. Yet the Hanged Man is not a card of defeat. Cease struggling against the rope for one full cycle of the moon. Wait, observe, listen. The answer you seek is already hanging beside you, visible only to one who stops thrashing."
+ },
+ {
+  "id": 7,
+  "title": "Fire of the Salamanders",
+  "outcome": "favourable",
+  "text": "Flame leaps in my crystal, and in the flame dance the salamanders, spirits of elemental Fire. They do not come to the timid. They come because, in the days behind you, you dared: you spoke when silence was safer, you began when beginnings frightened you. The Sun now enters your house of honour, and the Ace of Wands, that blazing rod of new will, rises from my deck. Your courage struck a spark; the universe must now fan it into a blaze, for such is the law of the fiery triplicity. Within three moons a venture you have barely begun will catch and spread. Feed it with daily effort, and it shall warm many hearths besides your own."
+ },
+ {
+  "id": 8,
+  "title": "The Law Unrecognised",
+  "outcome": "warning",
+  "text": "Every cause has its effect; every effect has its cause; chance is but a name for law not recognised. So teaches the Kybalion, and so I read in your stars. You believe your recent misfortune fell from a clear sky. It did not. It was sown by a careless word you spoke months ago, carried on the wind of Mercury and planted in the ear of one who remembers. Now the Seven of Swords, card of stealth and betrayal, lies across your path. The effect is in motion and cannot be recalled. But a new cause can be set against it. Seek out the one you wronged and speak plainly. The law that wounds you can, by the same law, heal."
+ },
+ {
+  "id": 9,
+  "title": "The Silver Cup of the Moon",
+  "outcome": "favourable",
+  "text": "Water stirs in my scrying bowl and the moon floats upon it, full and silver. The Queen of Cups rises from the deck, she who dreams true. Once, you listened to your dreams when the world told you to ignore them; you trusted a feeling no reason could defend, and it carried you safely through a dark season. Such fidelity to the inner tide is rare. Now the Moon passes through your eighth house of hidden treasures, and Neptune, ruler of the deep, lends you its fathomless sight. A buried thing will rise to the surface: a forgotten debt repaid, a letter, an old friend returning with a gift. Keep the bowl of your heart still, and you will see it coming."
+ },
+ {
+  "id": 10,
+  "title": "Jachin and Boaz",
+  "outcome": "mixed",
+  "text": "Before the temple of Solomon stood two pillars, Jachin and Boaz, white and black, mercy and severity. Between them you must now walk. Hermes taught that opposites are identical in nature, differing only in degree; heat and cold are one thing, and so are love and hate. You have swung from one pillar to the other, too generous one day, too harsh the next. The stars mirror that swing: Venus and Mars in opposition across your chart. A choice approaches that cannot be met from either extreme. Find the narrow path between the pillars, and you will enter the temple. Lean too far to either side, and its bronze doors will stay shut."
+ },
+ {
+  "id": 11,
+  "title": "The Star Pours Twice",
+  "outcome": "favourable",
+  "text": "Kneeling beside the waters, the maiden of the seventeenth Arcanum pours from two jugs: one upon the earth, one into the pool. She is hope renewed after the Tower's fall. I see her plainly in your reading, and I know why she has come. You endured a ruin not of your making, and instead of cursing the lightning you began, stone by stone, to rebuild. That humble persistence was noticed in the high halls of the zodiac. Uranus, planet of sudden change, now turns in your favour, and the eight stars above the maiden blaze in your chart. Fortune flows back toward you like water finding its level. Accept help when it is offered; pride alone could stop the pouring."
+ },
+ {
+  "id": 12,
+  "title": "The Obsidian Mirror",
+  "outcome": "warning",
+  "text": "Dark is the obsidian mirror of Doctor Dee, and darker still is what it shows me of you. You have been gazing into other people's mirrors, measuring your face against their faces, envying what was never yours. The planets punish envy with their slowest sentence. Saturn squares your natal Sun, and the Five of Pentacles appears: two beggars passing a lit window in the snow. You will feel poor, not for want of gold but for want of contentment, until you turn away from what others possess. Your comparisons forged this chain link by link. Break it the same way, one grateful thought at a time, or the winter will be long."
+ },
+ {
+  "id": 13,
+  "title": "The Philosopher's Rose",
+  "outcome": "favourable",
+  "text": "Rubedo! The reddening, the final stage of the Great Work, when the stone glows crimson and lead becomes gold. Few seekers reach it, and fewer still in this life. Yet the rose of the alchemists blooms in my glass tonight with your name upon its petals. You passed through the black of failure and the white of patient study; you did not abandon the vessel when the fire grew hot. Mars, the red planet, now crowns your midheaven in trine with the Sun. The transmutation is complete. What you have laboured on in obscurity shall be seen and valued. Do not hoard the gold. The true adept spends it on others, and so it multiplies."
+ },
+ {
+  "id": 14,
+  "title": "The Fool at the Precipice",
+  "outcome": "mixed",
+  "text": "Zero is the number of the Fool, and zero is where you stand: at the edge of a cliff, a white rose in your hand, a little dog barking at your heels. Uranus has entered your first house, demanding a leap. Before now you leapt often and blindly, and some of those leaps carried you high while others left you bruised in the valley. The universe has taken note of both. It offers the leap again, but the barking dog is your memory, and you would do well to heed it. Look down before you jump. If there is a path below, go boldly and fortune will catch you. If there is only mist, wait for morning."
+ },
+ {
+  "id": 15,
+  "title": "The Salt That Will Not Dissolve",
+  "outcome": "warning",
+  "text": "Paracelsus taught that all things are made of three: Sulphur, the soul that burns; Mercury, the spirit that flows; and Salt, the body that endures. In you the salt has hardened. You have refused to change your mind, your habits, your stubborn grudges, and you called this strength. The heavens disagree. Saturn and Pluto stand together in your fourth house of foundations, grinding like millstones, and what will not bend beneath them will crack. Your old refusals have ordained this pressure as surely as night ordains the dawn. Dissolve a little of that salt in the water of humility before the grinding begins, or a cherished alliance will crumble in your grasp."
+ },
+ {
+  "id": 16,
+  "title": "The Reed Pen of Thoth",
+  "outcome": "favourable",
+  "text": "Ibis-headed Thoth, whom the Greeks called Hermes Trismegistus, scribe of the gods and keeper of the scales, has written a line in your favour. I see his reed pen moving across the papyrus of heaven, and Mercury, his planet, glows bright in your third house of messages. Why has the Thrice-Great turned his eye upon you? Because you have honoured the word: you kept your contracts, you spoke truth when lies were cheaper, you taught what you knew without charging for it. Such is the worship he prefers. Soon a message will arrive, a letter, a call, a chance meeting, bearing news that changes your course for the better. Answer it swiftly, in your own true voice."
+ },
+ {
+  "id": 17,
+  "title": "The Eclipse of the Lion",
+  "outcome": "warning",
+  "text": "The sun is swallowed! An eclipse darkens Leo, the royal sign, and it falls directly upon the house of your ambitions. The Chaldeans feared such omens, for they foretold the fall of kings. You are no king, but lately you have behaved as one, demanding tribute and forgetting to give thanks. The darkened sun reflects your own dimmed generosity. Projects that flattered your pride will lose their light for a season, and allies grown weary of your commands will drift away. The eclipse passes, as all eclipses pass. When light returns, let it find you humbler, quicker to praise and slower to claim. Then the lion may roar again."
+ },
+ {
+  "id": 18,
+  "title": "The All Is Mind",
+  "outcome": "mixed",
+  "text": "The All is Mind; the universe is mental. That is the First Principle, the master key of the Hermetic art, and I offer it to you because your future is still unformed clay. The planets stand poised: Mercury trine Neptune, the intellect wedded to the dream. Neither blessing nor curse is yet decreed. Until now you allowed fear to think your thoughts for you, and fear builds only small rooms. The coming season will be built from whatever you hold most often in your mind. Picture defeat, and the stars will fashion it with perfect obedience. Picture the work completed and the goal reached, and they must fashion that instead. Choose the image carefully."
+ },
+ {
+  "id": 19,
+  "title": "The Knight of Pentacles Rides Slowly",
+  "outcome": "favourable",
+  "text": "Heavy hooves sound in the earth of my reading. The Knight of Pentacles comes, the slowest of all the knights, upon a black plough-horse, a golden coin in his gauntlet. He brings no sudden windfall; he brings what you earned. For years you saved when others spent, mended when others discarded, and laboured in the unglamorous furrow. Taurus, the sign of patient wealth, now hosts Jupiter in your second house of possessions, and the gnomes, keepers of buried ore, smile upon you. Your fortunes will grow as an oak grows, without noise, beyond doubt. Do not trade the oak for a firework. Stay the course, and security is yours."
+ },
+ {
+  "id": 20,
+  "title": "The Scorpion's Hidden Sting",
+  "outcome": "warning",
+  "text": "Under the sign of the Scorpion I see a secret coiled in your chart, and Pluto, lord of the underworld, guards it in your twelfth house of hidden things. Something you buried, a debt unpaid, a truth concealed, a promise quietly dropped, is stirring beneath the sand. The scorpion does not forget, and neither does the cosmos. When the moon next passes through its constellation, the secret will rise to sting. You cannot stop it, but you may draw the venom yourself. Confess, repay, or repair before it is discovered. A wound you open willingly heals clean; one opened by another festers."
+ },
+ {
+  "id": 21,
+  "title": "The Struck Bell",
+  "outcome": "favourable",
+  "text": "Nothing rests; everything moves; everything vibrates. So says the Third Hermetic Principle, and I feel your vibration rising through the brass of this cabinet like the hum of a struck bell. It was not always so. Once your note was low, dulled by complaint and idleness. But you changed it: you rose early, you sought good company, you put your hand to honest work. The music of the spheres has heard the new note. Venus, planet of harmony, now sings in your seventh house of partners, and those who vibrate in tune with you will find you as surely as one tuning fork wakes another. Expect a meeting that feels like recognition."
+ },
+ {
+  "id": 22,
+  "title": "The Devil's Silken Chains",
+  "outcome": "warning",
+  "text": "Horned and grinning, the fifteenth Arcanum squats upon his black pedestal, and two figures stand chained before him. Look closely: the chains are loose. They could slip free whenever they chose. So it is with you. A habit, an indulgence, a comfortable bondage has held you, and each time you renewed it you forged another link. Now Capricorn, the goat-horned sign, dominates your chart, and the Devil has come to collect. If you continue as before, a fine opportunity will pass you by while you sit chained and content. Lift the loop from your neck. It was never locked; your own hand fastened it."
+ },
+ {
+  "id": 23,
+  "title": "Albedo",
+  "outcome": "mixed",
+  "text": "After the blackening comes the whitening. The alchemists named it albedo, when the dark matter is washed clean in the waters of the moon and the first silver gleam appears. You stand in that washing now. Your recent hardships were the nigredo; you did not run from them, and that earned you passage to this second stage. Yet albedo is not gold. It is only promise. The Moon governs you this season, inconstant and reflective, and the Two of Cups hovers undecided. Continue the purification, keep the vessel sealed against distraction, and in the year to come the white shall redden into triumph. Break the seal too soon, and you must begin again."
+ },
+ {
+  "id": 24,
+  "title": "The Key of Hidden Gold",
+  "outcome": "favourable",
+  "text": "Within the eighth house dwell the riches of others: inheritances, partnerships, the shared treasure of many hands. Tonight that house is lit like a temple on a feast day, for Jupiter has entered it, and Pluto bows. Why should such wealth flow toward you? Because you have been a faithful steward. You returned what was lent, defended what was entrusted, and divided spoils fairly when you might have taken the larger share. The universe keeps meticulous books. Your honesty is inscribed in the Akashic records, the great library of all deeds, and the interest is now due. A partnership or shared venture will prosper beyond its promise. Sign with confidence."
+ },
+ {
+  "id": 25,
+  "title": "The Sun and the Moon Conjoined",
+  "outcome": "mixed",
+  "text": "Gender is in everything; everything has its masculine and feminine principles. Thus taught Hermes, and he spoke not of men and women alone, but of the force that projects and the force that receives, the sun that radiates and the moon that conceives. You have been all projection: pushing, demanding, launching plan after plan without pausing to receive what the world tried to give you. The stars now hang in balance, Sun conjunct Moon at the new moon in your house of beginnings. Learn to receive, and the season will bear abundant fruit. Keep pushing without listening, and your seeds will fall on stone."
+ },
+ {
+  "id": 26,
+  "title": "The Red Planet Turns Back",
+  "outcome": "warning",
+  "text": "See how the red planet halts in the heavens and wanders backward against the fixed stars! Mars is retrograde, and he marches through your house of rivals. The ancient astrologers counselled every general to stay his hand in such a season. You did not stay yours. In haste and anger you started quarrels you have not finished, and the war god now returns every blow you threw, magnified. The Five of Wands, a melee of striving youths, confirms it. Do not seek victory in the coming weeks; you will not find it. Seek peace instead. Lay down your staff first, and your rivals will lose the reason to raise theirs."
+ },
+ {
+  "id": 27,
+  "title": "The Magician's Table",
+  "outcome": "favourable",
+  "text": "Upon the table of the Magician, first of the Major Arcana, lie the four instruments of the Art: the wand, the cup, the sword, the coin. One of his hands points to heaven, the other to earth. You have gathered all four, though you may not know it. The wand is the will you showed in starting over; the cup, the friends you kept; the sword, the hard truths you accepted; the coin, the skills you laboured to learn. Mercury, patron of magicians, now stands at the zenith of your chart. Everything required for your success lies already on your table. Raise your hand and begin. The current will flow through you."
+ },
+ {
+  "id": 28,
+  "title": "The Moon's False Road",
+  "outcome": "warning",
+  "text": "Two towers, a howling dog, a wolf, and a crayfish crawling from the dark pool: the eighteenth Arcanum lies before you, and the Moon shines with a treacherous light. Illusion rules your chart. Neptune clouds your house of partnerships, and someone near you wears a mask. You were warned; you saw the small inconsistencies and chose to look away because the truth was inconvenient. That choice opened the gate through which deception walks. Do not sign, promise, or invest anything of value until the moon has waned to darkness and waxed again. In that clean light, the masks slip. Trust what you can verify; let the rest howl."
+ },
+ {
+  "id": 29,
+  "title": "The Ladder of Seven Rungs",
+  "outcome": "favourable",
+  "text": "The ancients told of a ladder of seven rungs, one for each planet, which the soul descends at birth and climbs again by wisdom. From the Moon to Saturn it rises, and at each step the climber casts off a vice. Hermes himself describes this ascent in the Poimandres. I see you upon the fourth rung, the Sun's, for you have already let go of lies, of greed, and of idle hunger for praise. That labour was yours alone, and the heavens reward it. In the coming months the Sun's virtues will gather round you: clarity, vigour, and the respect of those who once ignored you. Keep climbing. Saturn's rung, and its crown of mastery, is nearer than you fear."
+ },
+ {
+  "id": 30,
+  "title": "The Ace of Swords",
+  "outcome": "mixed",
+  "text": "A hand emerges from a cloud gripping a double-edged sword, and upon its tip rests a crown. The Ace of Swords: truth, clarity, decisive victory, but a blade cuts both ways. I see in your history a habit of speaking the bitter truth to everyone except yourself. Air, element of thought, rules your chart, and Mercury stands sharp in Gemini. A conflict approaches that only plain truth can resolve. Turn the blade first upon your own excuses, and you will carve a path to the crown. Wield it only against others, as you have before, and you will win the argument but lose the ally. The stars give you the sword; they do not choose your target."
+ },
+ {
+  "id": 31,
+  "title": "The Hierophant's Keys",
+  "outcome": "favourable",
+  "text": "Crossed keys, gold and silver, lie at the feet of the Hierophant, the master of sacred tradition. One unlocks the heavens, the other the earth. The keys are meant for you. You sought out teachers when it was humbling to admit ignorance; you honoured those who came before you and studied their ways. Now Jupiter, the great benefactor, moves through Sagittarius, sign of the scholar and the priest, and lights your house of wisdom. Doors of learning, guidance, and advancement will swing open at your knock. A mentor, an institution, or an examination will favour you. Walk in with reverence. The keys turn easiest in humble hands."
+ },
+ {
+  "id": 32,
+  "title": "The Schoolmaster of the Zodiac",
+  "outcome": "mixed",
+  "text": "Slow Saturn, oldest of the wandering stars, is the schoolmaster of the zodiac. He examines, and his examination is now, for he has come round to the very degree he held when last you faced a great decision. Everything you built on solid ground will stand; everything you built on wishful thinking will be tested to its timbers. I see both in your chart. A cornerstone you set carefully, a skill or a friendship honestly earned, will prove its worth. A shortcut you took will demand to be walked again the long way round. Accept the schoolmaster's correction graciously, and he will grant you a diploma no one can revoke."
+ },
+ {
+  "id": 33,
+  "title": "The Ouroboros",
+  "outcome": "warning",
+  "text": "The serpent that devours its own tail circles the margins of the alchemists' manuscripts with a single inscription: One is the All. It is the sign of eternal return, and it is coiled about your fate. You keep beginning the same story: the same mistake, the same unsuitable choice, the same promise to change tomorrow. Hermes taught that as within, so without; the circle in your habits is reflected in the circle of the stars, where the Moon's nodes have returned to the very degrees they held when you last fell. History is poised to repeat itself, faithfully. To break the circle you must do one thing differently, only one, but you must do it this time."
+ },
+ {
+  "id": 34,
+  "title": "The Empress in the Wheat",
+  "outcome": "favourable",
+  "text": "Crowned with twelve stars, robed in pomegranates, the Empress reclines in a field of ripe wheat, and a river runs beside her. She is Venus enthroned, the mother of abundance, and she has risen in your spread. You tended others when no one was watching: you nurtured a friend's fragile hope, a child's curiosity, a neighbour's garden while they were away. The Empress repays care with plenty. Venus now graces your fifth house of creation in trine with Jupiter. Whatever you plant this season, a project, a home, a love, a talent, will grow lush and fruitful. Harvest will come later than you wish, but heavier than you dared hope."
+ },
+ {
+  "id": 35,
+  "title": "The Seven Cups of Illusion",
+  "outcome": "warning",
+  "text": "Seven golden cups float in a cloud before a dreaming figure, each holding a wonder: a castle, a jewel, a laurel wreath, a serpent, a veiled spirit. So it stands with you. You have chased so many glittering visions that none of them has been brought to earth. Neptune, planet of fantasy, dissolves the boundaries of your chart, and the element of Water overflows its banks. Your restlessness ordained this confusion; you never held one cup long enough to drink. Unless you choose one cup and pour the others away, the coming season will slip through your fingers like mist. Choose now. Even the wrong cup is better than none."
+ },
+ {
+  "id": 36,
+  "title": "The Seal of Solomon",
+  "outcome": "favourable",
+  "text": "Two triangles interlaced, the one pointing upward like flame, the other downward like falling water: the Seal of Solomon, emblem of the union of opposites and the command of spirits. It glows in the heart of my crystal over your name. You have reconciled what was divided in your life. You forgave a rival, mended a family rift, made peace between your duty and your desire. The wise king's seal rewards exactly this. Mercury and Jupiter stand in sextile, and the elements of Fire and Water no longer war within you. Authority comes to those who unite. Before the year turns, others will look to you to lead."
+ },
+ {
+  "id": 37,
+  "title": "The Kingdom of Malkuth",
+  "outcome": "mixed",
+  "text": "At the root of the Tree of Life lies Malkuth, the Kingdom, tenth and lowest of the sephiroth, where all the light from above finally takes material form. Your fortune lies there, at the point where dreams must become deeds. You have lived long in the upper branches, in Chokmah's inspiration and Binah's understanding, planning beautifully and acting rarely. The heavens now press the light downward. Earth signs dominate the season, and the Ten of Pentacles waits at the bottom of my deck. If you bring your plans down to the ground, through work done with your hands, prosperity will crown the tree. If you only dream, the light will pass through you and fall to waste."
+ },
+ {
+  "id": 38,
+  "title": "The Lips of Wisdom",
+  "outcome": "mixed",
+  "text": "“The lips of wisdom are closed, except to the ears of understanding.” So begins the Kybalion, and tonight my lips open, for I perceive that you have ears to hear. Not always. Time and again you heard counsel and ignored it, received warnings and laughed. But something in you has lately grown quiet enough to listen, and the stars respond. Mercury moves out of shadow; Neptune's mists thin over your house of learning. Two paths lie ahead: one counselled by a voice you trust, one urged by your own impatience. Follow the counsel, and a long struggle ends in success. Follow the impatience, and you will learn the same lesson again, more dearly."
+ },
+ {
+  "id": 39,
+  "title": "Jupiter's Thunderbolt",
+  "outcome": "favourable",
+  "text": "Zeus hurls the thunderbolt, and the Greater Benefic hurls good fortune. Jupiter stands at the very cusp of your tenth house, the house of career and public renown, and in such a position he does not whisper; he roars. The ancients would have lit a hundred lamps for such a horoscope. Know that this is no accident of birth. You prepared the ground: you studied in the evenings when others rested, you took the thankless task, you kept your word to those who could do nothing for you. Now the bolt strikes. Promotion, praise, a stage on which to be seen: these are written for the coming months. Stand tall in the storm."
+ },
+ {
+  "id": 40,
+  "title": "The Burning of the Phoenix",
+  "outcome": "mixed",
+  "text": "In the alchemical bestiary the phoenix is the final bird, rising red from its own ashes. But before the rising comes the burning. I see the phoenix in your chart, wings already smoking. Pluto, lord of endings that are beginnings, crosses your Ascendant. Something must be surrendered, a role, a place, an old ambition you have outgrown, and your own choices have made it ripe for the fire. Hold it too tightly and you will be scorched along with it. Release it willingly and you will rise from its ashes renewed, with plumage brighter than before. The fire is certain. Whether it consumes your hopes or crowns them is yours to decide."
+ },
+ {
+  "id": 41,
+  "title": "The Chariot and the Sphinxes",
+  "outcome": "favourable",
+  "text": "Two sphinxes, one black and one white, draw the Chariot of the seventh Arcanum, and the charioteer holds no reins. He steers by will alone. That charioteer is you, for you mastered the warring impulses within yourself, idleness and ambition, fear and desire, harnessed them side by side and drove forward. Cancer, the sign that rules the Chariot, now shelters the Moon in your house of travel. A journey, literal or figurative, will end in triumph. Obstacles that once blocked your road will part before your onward rush. Keep your gaze fixed ahead and do not let either sphinx turn the wheels aside."
+ },
+ {
+  "id": 42,
+  "title": "The Nine Swords at Midnight",
+  "outcome": "warning",
+  "text": "Nine swords hang upon the black wall of the night, and beneath them a sleeper sits up in bed, face buried in both hands. You know this hour. You have lain awake with worries you created by putting off what should have been faced. Each postponed task, each unanswered letter, was a sword hung upon your wall, and now there are nine. Saturn governs your sixth house of daily duties, and he is no forgiving master. If you continue to delay, the coming weeks will bring a reckoning of tasks left too long. Rise before dawn tomorrow and take down one sword. Then another. The night is shorter than it seems."
+ },
+ {
+  "id": 43,
+  "title": "The Shepherd of Men",
+  "outcome": "favourable",
+  "text": "To Hermes, sleeping upon a mountain, appeared Poimandres, the Shepherd of Men, a being of vast light who revealed how the cosmos was born from Mind. That same light touches you tonight. I see it in the conjunction of Sun and Mercury in your house of the self: illumination wedded to intellect. Why you? Because you chose understanding over certainty. You questioned what you were taught and kept questioning until the answers were your own. The Shepherd honours such minds. In the season ahead, a problem that has defeated others will open before you like a lotus. Speak your solution aloud. It will lift you higher than you have ever stood."
+ },
+ {
+  "id": 44,
+  "title": "The Undines Depart",
+  "outcome": "warning",
+  "text": "Earth, Air, Fire, Water: the four elements must be in balance, or the Work fails. In your chart I find Fire raging unchecked and Water nearly dry. You have burned through your energy, your savings, your patience, chasing quick victories without rest or reflection. The salamanders are grateful for the fuel, but the undines, spirits of calm and feeling, have abandoned you. Mars and the Sun crowd together in Aries, hot and headlong. The coming month will drain your purse and your goodwill alike if you do not slow down. Spend less, rest more, and call on the people who soothe you. Only by restoring the waters can you save the fire."
+ },
+ {
+  "id": 45,
+  "title": "The Wheel of the Tenth Arcanum",
+  "outcome": "favourable",
+  "text": "Round and round turns the Wheel of the tenth Arcanum, ringed with the letters T-A-R-O, guarded at its corners by the angel, the eagle, the lion and the bull. Long have you ridden its lower arc, and long have you endured with good humour. You did not curse the wheel; you oiled it. You helped those who were lower still, and shared what little you had. Now Jupiter, the planet that rules the wheel, completes his great circuit, and the rim begins to rise. Luck shifts in your direction, sudden and unmistakable. A chance, an offer, an open door: take it. The wheel turns for those who kept faith with its turning."
+ },
+ {
+  "id": 46,
+  "title": "The Scales of Maat",
+  "outcome": "warning",
+  "text": "In the Hall of Two Truths the heart is weighed against the feather of Maat, and Thoth records the verdict. The scales have been set out for you, and the eleventh Arcanum, Justice, lifts her sword beside them. Libra rules your season, and Saturn, exalted in Libra, holds the beam. Lately you have tipped the scales in your own favour: a deal not quite honest, an advantage not quite earned, a credit taken that belonged to another. Such weights are small, but they accumulate. The balance will right itself, and it will cost you what you gained. Return it first, freely, and you may yet keep your good name."
+ },
+ {
+  "id": 47,
+  "title": "Quicksilver",
+  "outcome": "mixed",
+  "text": "Quicksilver will not stay in the hand. It runs, divides, recombines, reflecting every light that falls on it. The alchemists prized it as the universal solvent, and they feared it, and Hermes, whose metal it is, laughs at all who grasp too hard. Mercury dances through every house of your chart this season, and I see a time of rapid change. Opportunity and confusion will arrive together. You have always been nimble, adapting quickly, and that served you; but you have also been fickle, abandoning good things the moment they grew dull. The coming changes will reward the first habit and punish the second. Move swiftly when the moment calls, but finish what you start, and the silver will become gold."
+ },
+ {
+  "id": 48,
+  "title": "The Veil of the High Priestess",
+  "outcome": "favourable",
+  "text": "Behind the High Priestess hangs a veil embroidered with pomegranates, and behind the veil lies the water of all secrets. She sits between the pillars, a scroll half-hidden in her robe: the hidden law. Tonight she parts the veil for you. Why? Because you kept a secret entrusted to you when telling it would have won you favour. The guardians of hidden knowledge reward discretion above all virtues. The Moon is exalted in your chart, and your intuition is honed like a blade. In the season ahead you will know things before you are told them: whom to trust, which door to choose, when to act. Trust that silent knowing completely."
+ },
+ {
+  "id": 49,
+  "title": "Venus Veiled",
+  "outcome": "mixed",
+  "text": "Every eighteen months the morning star goes into hiding, stepping backward through the zodiac like a dancer leaving the floor. Venus is retrograde, and she retreats through your house of affections. The ancients said that in such seasons old loves return and old debts of the heart come due. You have been careless with kindness: promises of time not kept, affection taken for granted, thanks left unspoken. The cooling of Venus mirrors your own. A friendship or partnership will feel distant in the coming weeks, and you will be tempted to blame the other. Do not. Warm the hearth you let go cold, and Venus will dance forward again, bringing more than she took."
+ },
+ {
+  "id": 50,
+  "title": "The Sun Behind the Sun",
+  "outcome": "mixed",
+  "text": "The Hermetic masters spoke of a hidden sun behind the visible one, a central fire from which all light descends, and the Emerald Tablet names it the father of all perfection. Its rays fall upon you now, but slantwise, as at dawn. The Sun enters your house of hopes, yet Saturn casts a long shadow across it. You worked hard but doubted harder, and every doubt was a cloud across your own sky. The cosmos holds a great success in readiness, but it will only arrive where it is welcomed. Clear away the clouds of self-mistrust, and noon will come quickly. Cling to them, and you will shiver in perpetual morning."
+ }
+]/*FORTUNES_END*/;
+let FORTUNES = FORTUNES_EMBEDDED;
+if (location.protocol.startsWith('http')) {
+  try {
+    const r = await fetch(CFG.fortune.file, { cache: 'no-store' });
+    if (r.ok) { const j = await r.json(); if (Array.isArray(j) && j.length) FORTUNES = j; }
+  } catch (e) { /* keep the embedded copy */ }
+}
+document.getElementById('ver').textContent = CFG.version;
+document.title = CFG.version;
+
+// ---------------------------------------------------------------- renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.autoClear = false;
+document.body.appendChild(renderer.domElement);
+
+function loadTex(src) {
+  return new Promise((res, rej) => new THREE.TextureLoader().load(src, t => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    res(t);
+  }, undefined, rej));
+}
+let titleTex, cardTex;
+try {
+  [titleTex, cardTex] = await Promise.all([loadTex(ZOLTAR_ASSETS.title), loadTex(ZOLTAR_ASSETS.cardBack)]);
+} catch (e) { return fail('Could not decode the WebP art. Use a current Chrome, Edge or Firefox.'); }
+
+// embedded button font -> FontFace (works from file://)
+for (const name in (window.ZOLTAR_FONTS || {})) {
+  try {
+    const bin = Uint8Array.from(atob(ZOLTAR_FONTS[name]), ch => ch.charCodeAt(0));
+    const ff = new FontFace(name, bin.buffer); await ff.load(); document.fonts.add(ff);
+  } catch (e) { console.warn('font failed', name, e); }
+}
+
+// ---------------------------------------------------------------- helpers
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeInOutCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const lerp = (a, b, t) => a + (b - a) * t;
+
+let W = window.innerWidth, H = window.innerHeight;
+
+// ================================================================ BACKGROUND
+// Full-screen shader: deep teal-black velvet, drifting smoke, faint stars,
+// warm lamp glow over the card table, vignette.
+const bgScene = new THREE.Scene();
+const bgCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const bgMat = new THREE.ShaderMaterial({
+  depthWrite: false, depthTest: false,
+  uniforms: { uTime: { value: 0 }, uRes: { value: new THREE.Vector2(W, H) },
+              uCardsIn: { value: 0 }, uRegion: { value: CFG.cards.regionHeightFraction } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv; uniform float uTime; uniform vec2 uRes; uniform float uCardsIn; uniform float uRegion;
+    float hash(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
+    float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+      return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+    float fbm(vec2 p){ float v=0., a=.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.03; a*=.5; } return v; }
+    void main(){
+      vec2 uv = vUv; float asp = uRes.x/uRes.y;
+      vec2 p = vec2((uv.x-.5)*asp, uv.y-.5);
+      // base velvet
+      vec3 col = mix(vec3(.010,.020,.026), vec3(.030,.060,.070), smoothstep(1.1, 0.0, length(p*vec2(.8,1.))));
+      // smoke
+      float s = fbm(p*2.2 + vec2(uTime*.018, -uTime*.026));
+      s = fbm(p*1.6 + s*1.7 + vec2(-uTime*.012, uTime*.01));
+      col += vec3(.035,.055,.06) * smoothstep(.45,.95,s);
+      // stars
+      vec2 g = uv*uRes/3.5; vec2 id = floor(g);
+      float h = hash(id);
+      if (h > .9965) { float tw = .5+.5*sin(uTime*(1.+h*3.)+h*40.); vec2 f = fract(g)-.5;
+        col += vec3(.95,.8,.55) * tw * smoothstep(.5,.0,length(f)) * .55; }
+      // lamp glow over card table (bottom region)
+      float cy = uRegion*.5;
+      float d = length(vec2((uv.x-.5)*asp*.55, (uv.y-cy)*1.6));
+      col += vec3(.55,.36,.12) * .22 * uCardsIn * smoothstep(.75, .0, d);
+      // faint glow behind title area (top)
+      float dt = length(vec2((uv.x-.5)*asp*.9, (uv.y-.9)*2.2));
+      col += vec3(.20,.16,.08) * .25 * smoothstep(.6, .0, dt);
+      // vignette
+      col *= mix(.35, 1., smoothstep(1.25, .25, length(p*vec2(.9,1.25))));
+      // dither
+      col += (hash(uv*uRes+fract(uTime))-.5)/255.;
+      gl_FragColor = vec4(col, 1.);
+    }`
+});
+bgScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat));
+
+// ================================================================ TITLE
+// Orthographic camera in CSS pixels, origin at screen center, +y up.
+const uiScene = new THREE.Scene();
+const uiCam = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, -10, 10);
+const titleMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, depthTest: false,
+  uniforms: { uTex: { value: titleTex }, uAlpha: { value: 0 }, uTime: { value: 0 }, uShimmerPeriod: { value: CFG.title.shimmerPeriod } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv; uniform sampler2D uTex; uniform float uAlpha, uTime, uShimmerPeriod;
+    void main(){
+      vec4 t = texture2D(uTex, vUv);
+      vec3 c = t.rgb;
+      // gold shimmer: a diagonal light band sweeping across, only on bright (gold) pixels
+      float lum = dot(c, vec3(.299,.587,.114));
+      float ph = fract(uTime/uShimmerPeriod)*2.4 - .7;
+      float band = exp(-pow((vUv.x + vUv.y*.45 - ph)*7., 2.));
+      c += vec3(1.,.82,.5) * band * smoothstep(.25,.75,lum) * .55;
+      // feather the square edges into the background
+      // key out the dark backdrop so the gold logo floats on the scene, and drop the corner frame pieces
+      float key = smoothstep(.015, .11, lum);
+      vec2 q = vUv-.5; float r = 1.-smoothstep(.47,.56,length(q));
+      // side frame fragments: trim the left/right edges except around the centre spike
+      float edgeX = smoothstep(.06,.11, min(vUv.x, 1.-vUv.x));
+      r *= mix(edgeX, smoothstep(.04,.07, min(vUv.x, 1.-vUv.x)), 1.-smoothstep(.07,.13, abs(vUv.y-.5)));
+      gl_FragColor = vec4(c, uAlpha * r * key);
+      #include <colorspace_fragment>
+    }`
+});
+const title = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), titleMat);
+uiScene.add(title);
+
+// ================================================================ CARDS
+const cardScene = new THREE.Scene();
+const cardCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+cardCam.position.set(0, 6.6, 6.2);
+cardCam.lookAt(0, 0.0, 0);
+
+const CARD_H = 1.45, CARD_W = CARD_H * CFG.cards.aspect;
+const cardGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
+const N = CFG.cards.count;
+const cards = [];
+for (let i = 0; i < N; i++) {
+  const m = new THREE.MeshBasicMaterial({ map: cardTex, side: THREE.DoubleSide, alphaTest: 0.5,
+                                          alphaToCoverage: true, transparent: false });
+  const mesh = new THREE.Mesh(cardGeo, m);
+  mesh.visible = false;
+  cardScene.add(mesh);
+  cards.push({ mesh, mat: m, offset: i / N, wobble: Math.random() * Math.PI * 2 });
+}
+
+// warm pool of light under the spiral
+const poolMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uA: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uA;
+    void main(){ float d=length(vUv-.5)*2.; gl_FragColor=vec4(vec3(.9,.6,.22)*uA*.35*smoothstep(1.,0.,d)*smoothstep(1.,.3,d),1.); }`
+});
+const pool = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), poolMat);
+pool.rotation.x = -Math.PI / 2;
+pool.position.y = -0.05;
+pool.renderOrder = -1;
+cardScene.add(pool);
+
+// gold sparkles drifting up through the spiral
+const SP = CFG.sparkles.count;
+const spGeo = new THREE.BufferGeometry();
+const spPos = new Float32Array(SP * 3), spSeed = new Float32Array(SP);
+for (let i = 0; i < SP; i++) { spSeed[i] = Math.random(); spPos[i * 3] = Math.random(); spPos[i * 3 + 1] = Math.random(); spPos[i * 3 + 2] = Math.random(); }
+spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+spGeo.setAttribute('seed', new THREE.BufferAttribute(spSeed, 1));
+const spMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uTime: { value: 0 }, uA: { value: 0 }, uRx: { value: 3 }, uRz: { value: 1.7 }, uPR: { value: renderer.getPixelRatio() } },
+  vertexShader: `
+    attribute float seed; uniform float uTime, uRx, uRz, uPR; varying float vTw;
+    void main(){
+      float a = position.x*6.2832 + uTime*(.05+.1*seed);
+      float r = sqrt(position.z);
+      float y = fract(position.y + uTime*(.03+.05*seed));
+      vec3 p = vec3(cos(a)*r*uRx*1.05, y*1.8, sin(a)*r*uRz*1.05);
+      vTw = (.5+.5*sin(uTime*(2.+seed*5.)+seed*60.)) * smoothstep(0.,.15,y)*smoothstep(1.,.6,y);
+      vec4 mv = modelViewMatrix*vec4(p,1.);
+      gl_PointSize = (2.0+seed*3.5) * uPR * (9./-mv.z);
+      gl_Position = projectionMatrix*mv;
+    }`,
+  fragmentShader: `uniform float uA; varying float vTw;
+    void main(){ float d=length(gl_PointCoord-.5); float g=smoothstep(.5,.0,d);
+      gl_FragColor=vec4(vec3(1.,.78,.4)*g*g*vTw*uA,1.); }`
+});
+cardScene.add(new THREE.Points(spGeo, spMat));
+
+// spiral extents, fitted to the bottom region on resize
+let Rx = 3, Rz = 1.7;
+function fitSpiral() {
+  const regionH = H * CFG.cards.regionHeightFraction;
+  cardCam.aspect = W / regionH;
+  // keep the whole spiral (incl. lifted cards) vertically inside the region
+  const dist = cardCam.position.length();
+  const halfH = Math.tan(THREE.MathUtils.degToRad(cardCam.fov / 2)) * dist;
+  const halfW = halfH * cardCam.aspect;
+  Rx = clamp(halfW * 0.88 - CARD_H * 0.6, 1.0, 10);
+  Rz = clamp(Math.min(Rx * 0.55, halfH * 0.95 - CARD_H * 0.55), 0.8, 2.2);
+  cardCam.updateProjectionMatrix();
+  pool.scale.set(Rx * 1.25, Rz * 1.6, 1);
+  spMat.uniforms.uRx.value = Rx; spMat.uniforms.uRz.value = Rz;
+}
+
+const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler();
+const qFlip = new THREE.Quaternion(), Y_AXIS = new THREE.Vector3(0, 1, 0);
+const spawn = new THREE.Vector3(0, 2.6, -1.0);
+const target = new THREE.Vector3();
+const path = { th: 0, r: 1, flight: 0, flip: 0 };
+
+// One loop of the shuffle, u in [0,1):
+//   [0, tableFraction)  cards spiral inward on the table, fanned like petals
+//   [tableFraction, 1)  at the centre each card is lifted, flipped, and swept
+//                       back out overhead in one wide turn to re-join the edge.
+function spiralPos(u, out) {
+  const C = CFG.cards, tf = C.tableFraction, inner = C.innerRadius;
+  let r, th, y, flight = 0;
+  if (u < tf) {
+    const k = u / tf;
+    r = 1 - (1 - inner) * k;
+    th = 2 * Math.PI * C.turns * k;
+    y = 0.012 * k;                                 // slight stacking toward centre
+  } else {
+    flight = (u - tf) / (1 - tf);
+    const e = easeInOutCubic(flight);
+    r = inner + (1 - inner) * e;
+    th = 2 * Math.PI * (C.turns + flight);
+    y = C.flightLift * Math.sin(Math.PI * flight);
+  }
+  out.set(Rx * r * Math.cos(th), y, Rz * r * Math.sin(th));
+  path.th = th; path.r = r; path.flight = flight;
+  path.flip = flight > 0 ? 2 * Math.PI * C.flightFlips * smooth(0.05, 0.95, flight) : 0;
+  return th;
+}
+
+function updateCards(phase, t, tDeal) {
+  const C = CFG.cards;
+  for (let i = 0; i < N; i++) {
+    const c = cards[i];
+    const local = tDeal - i * C.dealStagger;
+    if (local < 0) { c.mesh.visible = false; continue; }
+    c.mesh.visible = !c.selected;          // a selected card is drawn by the hero scene instead
+    const u = ((c.offset + phase) % 1 + 1) % 1;
+    c.u = local >= C.dealFlight ? u : undefined;
+    spiralPos(u, target);
+
+    // radial "petal" orientation: long axis points out from the centre,
+    // face up and tipped toward the viewer; flips about its long axis in flight
+    const ang = Math.atan2(target.z / Rz, target.x / Rx);
+    const yaw = -ang - Math.PI / 2;
+    const lift = path.flight > 0 ? Math.sin(Math.PI * path.flight) * 0.6 : 0;
+    const pitch = -Math.PI / 2 + C.tilt + lift;
+    const roll = 0.04 * Math.sin(t * 1.3 + c.wobble);
+    tmpE.set(pitch, yaw, roll, 'YXZ');
+    c.mesh.quaternion.setFromEuler(tmpE);
+    qFlip.setFromAxisAngle(Y_AXIS, path.flip);
+    c.mesh.quaternion.multiply(qFlip);
+
+    // deal-in flight from above the table
+    const f = easeOutCubic(clamp(local / C.dealFlight, 0, 1));
+    c.mesh.position.lerpVectors(spawn, target, f);
+    if (f < 1) { tmpQ.setFromAxisAngle(Y_AXIS, (1 - f) * Math.PI * 4); c.mesh.quaternion.multiply(tmpQ); }
+    c.mesh.scale.setScalar(lerp(0.4, 1, f) * (0.9 + 0.1 * path.r));
+
+    // shade: nearer cards brighter, cards over the lamp brighter, airborne cards catch light
+    const depth = clamp((target.z / Math.max(Rz, 0.01)) * 0.5 + 0.5, 0, 1);
+    const b = (0.62 + 0.38 * depth) * (0.85 + 0.15 * (1 - path.r)) * (1 + 0.25 * Math.sin(Math.PI * path.flight)) * lerp(0.3, 1, f);
+    c.mat.color.setRGB(b, b * 0.97, b * 0.92);
+  }
+}
+
+// ================================================================ SELECTED CARD (A3)
+// The chosen card leaves the bottom-third spiral and is re-drawn in a full-screen "hero" scene whose
+// perspective camera is set up so 1 world unit = 1 CSS pixel at z = 0 (origin at screen centre, +y up).
+const heroScene = new THREE.Scene();
+const heroCam = new THREE.PerspectiveCamera(30, 1, 1, 20000);
+const heroMat = new THREE.MeshBasicMaterial({ map: cardTex, side: THREE.DoubleSide, alphaTest: 0.5, alphaToCoverage: true });
+const heroCard = new THREE.Mesh(new THREE.PlaneGeometry(CFG.cards.aspect, 1), heroMat);
+heroCard.visible = false;
+const haloMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+  uniforms: { uA: { value: 0 }, uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uA, uTime;
+    void main(){
+      vec2 p = (vUv-.5)*2.; float r = length(p*vec2(1.25,.8));
+      float a = atan(p.y,p.x);
+      float rays = .55+.45*sin(a*14.+uTime*.6)*sin(a*5.-uTime*.4);
+      float g = smoothstep(1.,.15,r) * (.55 + .45*rays*smoothstep(.2,.9,r));
+      gl_FragColor = vec4(vec3(1.,.72,.32)*g*g*uA, 1.);
+    }`
+});
+const halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), haloMat);
+halo.renderOrder = -1; heroCard.renderOrder = 1;
+heroScene.add(halo, heroCard);
+
+const sel = {
+  state: 'none',          // none | flying | presenting | returning
+  card: null, t0: 0, dur: 1,
+  from: { p: new THREE.Vector3(), q: new THREE.Quaternion(), h: 1 },
+  arrivedAt: 0,
+};
+const ID_Q = new THREE.Quaternion();
+const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _qs = new THREE.Quaternion();
+
+// where a spiral card currently appears on screen, in hero-scene coordinates
+function cardScreenPose(c, out) {
+  const rh = H * CFG.cards.regionHeightFraction;
+  _v.copy(c.mesh.position).applyMatrix4(cardCam.matrixWorldInverse);
+  const depth = -_v.z;
+  _v.copy(c.mesh.position).project(cardCam);
+  out.p.set(_v.x * W / 2, -H / 2 + (_v.y + 1) / 2 * rh, 0);
+  out.h = CARD_H * c.mesh.scale.y / (2 * Math.tan(THREE.MathUtils.degToRad(cardCam.fov / 2)) * depth) * rh;
+  out.q.copy(cardCam.quaternion).invert().multiply(c.mesh.quaternion);
+  return out;
+}
+function presentPose() {
+  const P = CFG.select;
+  return { y: H / 2 - H * P.centerY, h: Math.min(H * P.heightFraction, W * 0.8 / CFG.cards.aspect) };
+}
+function pickCard() {
+  // nearest-to-viewer card lying on the table (not mid-flight, not just dealt)
+  let best = null, bz = -Infinity;
+  for (const c of cards) {
+    if (!c.mesh.visible || c.u === undefined) continue;
+    if (c.u < 0.06 || c.u > CFG.cards.tableFraction - 0.08) continue;
+    if (c.mesh.position.z > bz) { bz = c.mesh.position.z; best = c; }
+  }
+  return best;
+}
+function beginSelect(now, dur) {
+  const c = pickCard();
+  if (!c) return false;
+  sel.card = c; c.selected = true;
+  cardScreenPose(c, sel.from);
+  sel.state = 'flying'; sel.t0 = now; sel.dur = dur; sel.fortuneOpened = false;
+  heroCard.visible = true;
+  return true;
+}
+function beginReturn(now) {
+  sel.state = 'returning'; sel.t0 = now; sel.dur = CFG.select.returnTime;
+  sel.retFrom = { p: heroCard.position.clone(), q: heroCard.quaternion.clone(), h: heroCard.scale.y };
+}
+
+function updateHero(now) {
+  const P = CFG.select, pres = presentPose();
+  haloMat.uniforms.uTime.value = now;
+  if (sel.state === 'none') { heroCard.visible = false; halo.visible = false; return; }
+  halo.visible = true;
+  const k = clamp((now - sel.t0) / sel.dur, 0, 1);
+
+  if (sel.state === 'flying') {
+    const e = easeInOutCubic(k);
+    const f = sel.from;
+    // quadratic bezier: lift up out of the spiral toward the viewer, then glide to centre stage
+    const p1x = f.p.x * 0.4, p1y = Math.max(f.p.y, pres.y) - H * 0.05, p1z = H * 0.35;
+    const a = (1 - e) * (1 - e), b = 2 * (1 - e) * e, c2 = e * e;
+    heroCard.position.set(a * f.p.x + b * p1x + c2 * 0,
+                          a * f.p.y + b * p1y + c2 * pres.y,
+                          a * 0 + b * p1z + c2 * 0);
+    // un-tilt to face the viewer while spinning twice about its long axis
+    _q.copy(f.q).slerp(ID_Q, e);
+    _qs.setFromAxisAngle(Y_AXIS, Math.PI * 2 * P.spins * easeInOutCubic(k));
+    heroCard.quaternion.copy(_q).multiply(_qs);
+    const h = lerp(f.h, pres.h, e);
+    heroCard.scale.set(h, h, 1);
+    haloMat.uniforms.uA.value = 0.9 * smooth(0.3, 1, k);
+    if (k >= 1) { sel.state = 'presenting'; sel.arrivedAt = now; }
+  } else if (sel.state === 'presenting') {
+    const t = now - sel.arrivedAt;
+    heroCard.position.set(0, pres.y + Math.sin(t * 1.1) * H * 0.006, 0);
+    _qs.setFromAxisAngle(Y_AXIS, Math.sin(t * 0.7) * 0.16);
+    _q.setFromAxisAngle(X_AXIS, Math.sin(t * 0.9 + 1) * 0.04);
+    heroCard.quaternion.copy(_qs).multiply(_q);
+    heroCard.scale.set(pres.h, pres.h, 1);
+    // A7: once the card has come to a halt in centre stage, the fortune window opens
+    if (!sel.fortuneOpened && t >= CFG.fortune.openDelay) { sel.fortuneOpened = true; openFortune(now); }
+    // flare on arrival, then a slow breathing glow
+    haloMat.uniforms.uA.value = 0.75 + 0.15 * Math.sin(t * 1.6) + 1.6 * Math.exp(-t * 2.2);
+  } else if (sel.state === 'returning') {
+    const e = easeInOutCubic(k);
+    const to = cardScreenPose(sel.card, { p: new THREE.Vector3(), q: new THREE.Quaternion(), h: 1 });
+    const f = sel.retFrom;
+    heroCard.position.lerpVectors(f.p, to.p, e);
+    heroCard.position.z = Math.sin(Math.PI * e) * H * 0.15;
+    heroCard.quaternion.copy(f.q).slerp(to.q, e);
+    const h = lerp(f.h, to.h, e);
+    heroCard.scale.set(h, h, 1);
+    haloMat.uniforms.uA.value = 0.8 * (1 - e);
+    if (k >= 1) {
+      sel.card.selected = false; sel.card = null; sel.state = 'none'; heroCard.visible = false;
+      btn.classList.remove('gone');            // the button fades back in for the next visitor
+    }
+  }
+  halo.position.set(heroCard.position.x, heroCard.position.y, heroCard.position.z - 1);
+  const hs = heroCard.scale.y * 1.9;
+  halo.scale.set(hs, hs, 1);
+}
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+
+// ================================================================ MUSIC + BUTTON (A3, always-on music A4)
+const music = {
+  ctx: null, engine: null,
+  ensure(fast) {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC || !window.ZoltarMusic) return null;
+      this.ctx = new AC();
+      this.engine = new ZoltarMusic(this.ctx, { volume: CFG.music.volume, swellTime: CFG.music.swellTime });
+      this.engine.build();
+      this.engine.opts.fadeIn = fast ? 1.2 : CFG.music.fadeIn;
+      this.engine.start();
+      this.ctx.onstatechange = () => updateSoundHint();
+    }
+    if (this.ctx.state !== 'running') this.ctx.resume();
+    return this.engine;
+  },
+  swell() { const e = this.ensure(true); if (e) e.swell(this.ctx.currentTime + 0.05); },
+  swellTime() { return CFG.music.swellTime; },
+};
+// The music plays all the time, from page load. Browsers only allow sound to start on its own when
+// autoplay is permitted (Chrome/Edge launched by Zoltar_kiosk.bat with --autoplay-policy=no-user-gesture-required,
+// a site with high media engagement, or Firefox with autoplay allowed). Otherwise the audio clock waits,
+// a small hint is shown, and the very first click / key / touch anywhere lets it play - after that it never stops.
+const soundHint = document.getElementById('sound'), pageStart = performance.now() / 1000;
+function updateSoundHint() {
+  const blocked = !music.ctx || music.ctx.state !== 'running';
+  soundHint.classList.toggle('off', !blocked || performance.now() / 1000 - pageStart < 1.5);
+}
+music.ensure(false);
+
+const btn = document.getElementById('future');
+btn.textContent = CFG.select.buttonText;
+let surgeStart = -1, surgePeak = -1;
+function knowYourFuture() {
+  if (btn.classList.contains('gone') || !btn.classList.contains('shown') || sel.state !== 'none') return;
+  const now = performance.now() / 1000;
+  music.swell();
+  const T = music.swellTime();
+  surgeStart = now; surgePeak = now + T;
+  btn.classList.add('gone');                  // A6: the button fades away
+  if (!beginSelect(now, T)) btn.classList.remove('gone');
+}
+// ---------------------------------------------------------------- A7: fortune window
+// Shuffle bag: every fortune is shown once before any repeats; a new round never starts with the last one shown.
+const ROMAN = n => [[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']].reduce((s, [v, r]) => { while (n >= v) { s += r; n -= v; } return s; }, '');
+const bag = {
+  order: [], last: -1,
+  next() {
+    if (!FORTUNES.length) return null;
+    if (!this.order.length) {
+      this.order = FORTUNES.map((_, i) => i);
+      for (let i = this.order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.order[i], this.order[j]] = [this.order[j], this.order[i]]; }
+      const n = this.order.length;
+      if (n > 1 && this.order[n - 1] === this.last) [this.order[0], this.order[n - 1]] = [this.order[n - 1], this.order[0]];
+    }
+    this.last = this.order.pop();
+    return FORTUNES[this.last];
+  }
+};
+const fx = { el: document.getElementById('fortune'), state: 'hidden', openedAt: 0, current: null, shown: 0 };
+const fxIn = fx.el.querySelector('.fx-in');
+function openFortune(now) {
+  const f = bag.next();
+  if (!f) { beginReturn(now); return; }                 // no fortunes at all: behave like A6
+  fx.current = f; fx.shown++;
+  document.getElementById('fx-num').textContent = 'Fortune ' + ROMAN(f.id || 0);
+  document.getElementById('fx-title').textContent = f.title;
+  document.getElementById('fx-text').textContent = f.text;
+  fxIn.scrollTop = 0;
+  fx.el.setAttribute('aria-hidden', 'false');
+  fx.el.classList.add('open');
+  fx.state = 'open'; fx.openedAt = now;
+}
+// Close the fortune; the card then flies back into the spiral and the button fades back in.
+function closeFortune(force) {
+  const now = performance.now() / 1000;
+  if (fx.state !== 'open' || sel.state !== 'presenting') return false;
+  if (!force && now - fx.openedAt < CFG.fortune.minShowSeconds) return false;
+  fx.el.classList.remove('open');
+  fx.el.setAttribute('aria-hidden', 'true');
+  fx.state = 'hidden';
+  beginReturn(now);
+  return true;
+}
+function hideFortuneNow() { fx.el.classList.remove('open'); fx.el.setAttribute('aria-hidden', 'true'); fx.state = 'hidden'; }
+
+btn.addEventListener('click', e => { e.stopPropagation(); btn.blur(); knowYourFuture(); });
+// A click / tap anywhere (the window included) closes the fortune. 'click' rather than 'pointerdown' so that
+// scrolling a long fortune on a touch screen doesn't close it. Clicks while the card flies are ignored.
+window.addEventListener('click', e => { if (fx.state === 'open') { e.preventDefault(); closeFortune(false); } });
+setInterval(() => {
+  if (fx.state === 'open' && CFG.fortune.autoCloseSeconds > 0 &&
+      performance.now() / 1000 - fx.openedAt > CFG.fortune.autoCloseSeconds) closeFortune(true);
+}, 500);
+// any interaction (re)starts the audio clock if the browser was holding it
+for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListener(ev, () => music.ensure(false), { capture: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) music.ensure(false); });
+setInterval(() => { if (music.ctx && music.ctx.state === 'suspended') music.ctx.resume().catch(() => {}); updateSoundHint(); }, 1000);
+
+function surgeAmount(now) {
+  if (surgeStart < 0) return 0;
+  if (now < surgePeak) return smooth(surgeStart, surgePeak, now);
+  return Math.exp(-(now - surgePeak) / 1.6);
+}
+
+// ================================================================ LAYOUT / TIMING
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  renderer.setSize(W, H);
+  bgMat.uniforms.uRes.value.set(W, H);
+  uiCam.left = -W / 2; uiCam.right = W / 2; uiCam.top = H / 2; uiCam.bottom = -H / 2;
+  uiCam.updateProjectionMatrix();
+  heroCam.aspect = W / H;
+  heroCam.position.set(0, 0, (H / 2) / Math.tan(THREE.MathUtils.degToRad(heroCam.fov / 2)));
+  heroCam.lookAt(0, 0, 0);
+  heroCam.updateProjectionMatrix();
+  spMat.uniforms.uPR.value = renderer.getPixelRatio();
+  fitSpiral();
+  btn.style.top = (CFG.select.buttonY * 100) + '%';
+}
+window.addEventListener('resize', resize);
+resize();
+// pre-compile the selected-card shaders so the first click doesn't stall (that stall delayed the button fade)
+heroCard.visible = halo.visible = true;
+renderer.compile(heroScene, heroCam);
+heroCard.visible = halo.visible = false;
+
+let t0 = performance.now() / 1000;
+function replay() {
+  t0 = performance.now() / 1000;
+  btn.classList.remove('shown');
+  if (sel.card) sel.card.selected = false;
+  sel.state = 'none'; sel.card = null; btn.classList.remove('gone');
+  hideFortuneNow();
+}
+
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'r') replay();
+  else if (k === ' ' || k === 'enter') {
+    e.preventDefault();
+    if (e.repeat) return;                                   // a held key never double-fires
+    if (fx.state === 'open') closeFortune(false);
+    else if (sel.state === 'none') knowYourFuture();        // ignored while the card flies / returns
+  }
+  else if (k === 'f') { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+  else if (k === 'h') { for (const id of ['ver', 'help']) { const el = document.getElementById(id); el.style.display = el.style.display === 'none' ? '' : 'none'; } }
+});
+
+function layoutTitle(t) {
+  const I = CFG.intro;
+  const big = Math.min(H, W) * I.introSizeOfMinDim;
+  // the logo itself fills ~contentFraction of the square art, so scale the square so the
+  // visible logo occupies the top finalHeightFraction of the screen
+  const band = H * CFG.title.finalHeightFraction;
+  const small = Math.min(band / CFG.title.contentFraction, W * 0.9);
+  const yBig = 0, ySmall = H / 2 - band / 2;
+  const tFade = clamp(t / I.fadeIn, 0, 1);
+  const tMove = easeInOutCubic(clamp((t - I.fadeIn - I.hold) / I.move, 0, 1));
+  const size = lerp(big * lerp(0.9, 1, easeOutCubic(tFade)), small, tMove);
+  title.scale.set(size, size, 1);
+  title.position.set(0, lerp(yBig, ySmall, tMove), 0);
+  titleMat.uniforms.uAlpha.value = smooth(0, 1, tFade);
+}
+
+// ================================================================ LOOP
+let lastNow = performance.now() / 1000, phase = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.1, now - lastNow); lastNow = now;
+  const t = now - t0;                 // time since intro start
+  const I = CFG.intro;
+  const tDeal = t - (I.fadeIn + I.hold + CFG.cards.dealDelayAfterMoveStart);
+  const cardsIn = smooth(0, 1.5, tDeal);
+
+  // the button appears once the cards have been dealt
+  if (!btn.classList.contains('shown') && tDeal > CFG.cards.dealStagger * N + CFG.cards.dealFlight) btn.classList.add('shown');
+
+  // the spiral whirls faster as the music swells, then settles
+  const surge = surgeAmount(now);
+  phase += dt / CFG.cards.loopSeconds * (1 + CFG.select.spiralBoost * surge);
+
+  bgMat.uniforms.uTime.value = now;
+  bgMat.uniforms.uCardsIn.value = cardsIn * (1 + 1.3 * surge);
+  titleMat.uniforms.uTime.value = now;
+  spMat.uniforms.uTime.value = now;
+  spMat.uniforms.uA.value = cardsIn * (1 + 2.5 * surge);
+  poolMat.uniforms.uA.value = cardsIn * (1 + 1.6 * surge);
+
+  layoutTitle(t);
+  updateCards(phase, now, tDeal);
+  updateHero(now);
+
+  renderer.setViewport(0, 0, W, H);
+  renderer.setScissorTest(false);
+  renderer.clear();
+  renderer.render(bgScene, bgCam);
+
+  // cards live in the bottom region of the screen
+  const rh = Math.round(H * CFG.cards.regionHeightFraction);
+  renderer.setViewport(0, 0, W, rh);
+  renderer.setScissor(0, 0, W, rh);
+  renderer.setScissorTest(true);
+  renderer.clearDepth();
+  renderer.render(cardScene, cardCam);
+  renderer.setScissorTest(false);
+
+  renderer.setViewport(0, 0, W, H);
+  renderer.render(uiScene, uiCam);
+  renderer.clearDepth();
+  renderer.render(heroScene, heroCam);
+  if (window.__zoltarAfterFrame) window.__zoltarAfterFrame();   // A8: the movie recorder copies this frame
+}
+frame();
+
+// test hook (used by the automated screenshot check)
+window.__zoltar = { CFG, cards, replay, knowYourFuture, sel, music, fx, bag, closeFortune, get FORTUNES() { return FORTUNES; }, get Rx() { return Rx; }, get Rz() { return Rz; } };
+})();
+</script>
+<!-- A8: movie recording (button "● Make movie", keys M / V) -->
+<script src="CT46.A8.Zoltar_movie.js"></script>
+</body>
+</html>
